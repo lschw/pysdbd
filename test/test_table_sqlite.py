@@ -407,8 +407,8 @@ class TableTestSqlite(unittest.TestCase):
             self.settings.check_predefined_rows()
         
         self.assertEqual(
-            cm.exception.__str__(),
-            "Table 'settings' is invalid. The following predefined rows are missing or invalid: {'value': '^(([0-9]+)\\\\.([0-9]+)\\\\.([0-9]+))$', 'key': 'version'}, {'value': '^(XYZ|ABC)$', 'key': 'typ'}, {'value': '.+', 'key': 'name'}"
+            cm.exception.__str__().startswith("Table 'settings' is invalid. The following predefined rows are missing or invalid:"),
+            True
         )
         
         self.settings.create_default_rows()

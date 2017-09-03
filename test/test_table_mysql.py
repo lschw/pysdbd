@@ -8,27 +8,27 @@ from test_table_sqlite import *
 
 class TableTestMysql(TableTestSqlite):
     
-    ret1 = [{"id": 1, "name": "Peter", "birthday": datetime.date(2010,01,01), "size": 14.3},
-            {"id": 2, "name": "Mayer", "birthday": datetime.date(2010,01,01), "size": 16.3},
-            {"id": 3, "name": "Hans", "birthday": datetime.date(2010,01,01), "size": 16.3}]
+    ret1 = [{"id": 1, "name": "Peter", "birthday": datetime.date(2010,1,1), "size": 14.3},
+            {"id": 2, "name": "Mayer", "birthday": datetime.date(2010,1,1), "size": 16.3},
+            {"id": 3, "name": "Hans", "birthday": datetime.date(2010,1,1), "size": 16.3}]
     
-    ret2 = [{"id": 3, "name": "Hans", "birthday": datetime.date(2010,01,01), "size": 16.3}]
+    ret2 = [{"id": 3, "name": "Hans", "birthday": datetime.date(2010,1,1), "size": 16.3}]
     
-    ret3 = [{"id": 3, "name": "Hans", "birthday": datetime.date(2010,01,01), "size": 16.3},
-            {"id": 2, "name": "Mayer", "birthday": datetime.date(2010,01,01), "size": 16.3},
-            {"id": 1, "name": "Peter", "birthday": datetime.date(2010,01,01), "size": 14.3},
+    ret3 = [{"id": 3, "name": "Hans", "birthday": datetime.date(2010,1,1), "size": 16.3},
+            {"id": 2, "name": "Mayer", "birthday": datetime.date(2010,1,1), "size": 16.3},
+            {"id": 1, "name": "Peter", "birthday": datetime.date(2010,1,1), "size": 14.3},
             ]
     
-    ret4 = [{"id": 3, "name": "Hans", "birthday": datetime.date(2010,01,01), "size": 16.3},
-            {"id": 2, "name": "Mayer", "birthday": datetime.date(2010,01,01), "size": 16.3},
+    ret4 = [{"id": 3, "name": "Hans", "birthday": datetime.date(2010,1,1), "size": 16.3},
+            {"id": 2, "name": "Mayer", "birthday": datetime.date(2010,1,1), "size": 16.3},
             ]
     
-    ret5 = [{"id": 1, "name": "Peter", "birthday": datetime.date(2010,01,01), "size":14.3},
+    ret5 = [{"id": 1, "name": "Peter", "birthday": datetime.date(2010,1,1), "size":14.3},
             ]
     
-    ret6 = {"id": 1, "name": "Peter", "birthday": datetime.date(2010,01,01), "size": 14.3}
+    ret6 = {"id": 1, "name": "Peter", "birthday": datetime.date(2010,1,1), "size": 14.3}
     
-    ret7 = {"id": 1, "name": "Peter", "birthday": datetime.date(2010,01,01), "size": 18.3}
+    ret7 = {"id": 1, "name": "Peter", "birthday": datetime.date(2010,1,1), "size": 18.3}
     
     def setUp(self):
         self.dbh = db.MysqlDriver(
