@@ -318,7 +318,7 @@ class Table:
         Raise exception if not all defined columns exist
         """
         cols = self.dbh.get_columns(self.name)
-        cols_defined = self.columns.keys() + ["id"]
+        cols_defined = list(self.columns.keys()) + ["id"]
         missing = []
         for col in cols_defined:
             if col not in cols:
