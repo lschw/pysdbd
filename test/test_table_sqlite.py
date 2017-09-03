@@ -367,6 +367,22 @@ class TableTestSqlite(unittest.TestCase):
             self.ret7
         )
         
+        # update multipe rows at once
+        self.persons.update(
+            [
+                {"size": 8.2},
+                {"size": 10.5},
+            ],
+            where=db.condition.Eq("id", [1,2])
+        )
+        self.assertEqual(
+            self.persons.get(
+                cols=["size"],
+                ret="cols"
+            ),
+            [8.2,10.5,16.3]
+        )
+        
         self.remove_tables()
     
     
