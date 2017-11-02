@@ -87,6 +87,7 @@ class Table:
         if not self.dbh.table_exists(self.name):
             if create:
                 self.dbh.create_table(self.name, self.columns)
+                self.create_default_rows()
             else:
                 raise Error("Table '{}' does not exist".format(self.name))
     
