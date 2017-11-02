@@ -134,7 +134,7 @@ class Table:
         return (self.count(where) > 0)
     
     
-    def create(self, data, cb_validate=None):
+    def create(self, data, cb_validate=None, skip_check_predefined_rows=False):
         """
         Create new row(s)
         
@@ -151,6 +151,7 @@ class Table:
                 errors : list of dict { str: str }
                     Error dict for each row. The method must save its errors
                     inside these dicts with column name as key
+        skip_check_predefined_rows : Whether to skip the predefined rows check
         
         Returns
         -------
@@ -165,7 +166,7 @@ class Table:
             ",".join([self.dbh.placeholder]*len(cols))
         )
         ids = self.dbh.execute(sql, values, ret="id")
-        self._validate2(validated, cb_validate)
+        self._validate2(validated, cb_validate, skip_check_predefined_rows)
         return ids
     
     
@@ -362,7 +363,7 @@ class Table:
         Create default rows defined for this table
         """
         for row in self.default:
-            self.create([row])
+            self.create([row], skip_check_predefined_rows=True)
     
     
     def _validate_data(self, data, errors):
@@ -450,7 +451,8 @@ class Table:
         return validated,cols,values
     
     
-    def _validate2(self, data, cb_validate=None):
+    def _validate2(self, data, cb_validate=None,
+            skip_check_predefined_rows=False):
         """
         Validate data after inserting into database
         
@@ -460,7 +462,10 @@ class Table:
             Validated data, see `create()` for description
         cb_validate : None, method
             see `create()` for description
+        skip_check_predefined_rows : Whether to skip the predefined rows check
         """
+        if not skip_check_predefined_rows:
+            self.check_predefined_rows()
         errors = []
         for i,d in enumerate(data):
             errors.append({})
