@@ -63,7 +63,7 @@ def validate(col, value, fmt, errors):
         
         # Loop through all specified formats
         for f in fmt:
-            if f == "not_empty" or f == "unique":
+            if f == "not_empty" or f == "unique" or f == "text":
                 continue
             
             # Validate with user defined regular expression
