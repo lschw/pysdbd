@@ -475,7 +475,6 @@ class Table:
                         errors[i][col] = "NOT_UNIQUE"
         
         if not all(not e for e in errors):
-            print(errors)
             raise ValidationError(errors)
         
         if cb_validate != None:
