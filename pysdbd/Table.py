@@ -71,6 +71,9 @@ class Table:
     # ]
     default = []
     
+    # List of columns which should have an unique constraint
+    unique = []
+    
     
     def __init__(self, dbh, create=False):
         """
@@ -86,7 +89,7 @@ class Table:
         self.dbh = dbh
         if not self.dbh.table_exists(self.name):
             if create:
-                self.dbh.create_table(self.name, self.columns)
+                self.dbh.create_table(self.name, self.columns, self.unique)
                 self.create_default_rows()
             else:
                 raise Error("Table '{}' does not exist".format(self.name))

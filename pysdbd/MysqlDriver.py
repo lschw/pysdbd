@@ -132,7 +132,7 @@ class MysqlDriver(Driver):
         return (self.execute(sql, params=[name], ret="row") != None)
     
     
-    def create_table(self, name, columns):
+    def create_table(self, name, columns, unique=[]):
         """
         Create table
         """
@@ -161,6 +161,14 @@ class MysqlDriver(Driver):
             col_str.append(s)
         
         col_str.append("PRIMARY KEY ({})".format(self.quote_name("id")))
+        
+        if unique:
+            col_str.append(
+                "UNIQUE({})".format(", ".join(
+                    [self.quote_name(col) for col in unique])
+                )
+            )
+        
         sql = "CREATE TABLE {} ({}) ".format(
             self.quote_name(name),
             ", ".join(col_str)

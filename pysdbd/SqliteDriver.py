@@ -125,7 +125,7 @@ class SqliteDriver(Driver):
         return (self.execute(sql, params=[name], ret="row") != None)
     
     
-    def create_table(self, name, columns):
+    def create_table(self, name, columns, unique=[]):
         """
         Create table
         """
@@ -152,6 +152,13 @@ class SqliteDriver(Driver):
             if "not_null" in columns[col]:
                 s += " NOT NULL"
             col_str.append(s)
+        
+        if unique:
+            col_str.append(
+                "UNIQUE({})".format(", ".join(
+                    [self.quote_name(col) for col in unique])
+                )
+            )
         
         sql = "CREATE TABLE {} ({});".format(
             self.quote_name(name),
