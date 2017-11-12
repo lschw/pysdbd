@@ -29,6 +29,16 @@ class Driver:
     # Default timeout for transactions in seconds
     transaction_timeout = 3
     
+    # Whether transactions can be nested
+    nested_transactions = False
+    
+    # Transaction counter
+    transaction_cnt = 0
+    
+    # Flag whether transaction was rolled back in nested transaction
+    nested_rollback = False
+    
+    
     def __init__(self):
         """
         Setup connection to database

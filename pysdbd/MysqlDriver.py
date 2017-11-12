@@ -201,24 +201,39 @@ class MysqlDriver(Driver):
         if not t_state:
             return
         
-        timeout = self.transaction_timeout if timeout == None else timeout
-        t0 = time.time()
-        exc_buf = None
-        while time.time() < t0+timeout:
-            try:
-                self.con.start_transaction()
-                self.log.debug("Transaction started")
-                return
-            except mysql.connector.Error as e:
-                exc_buf = e
-                if e.msg == "Transaction already in progress":
-                    time.sleep(0.1) # try every 0.1 s to start transaction
-                else:
-                    break
-            self.log.debug("Transaction wait...")
-        msg = "Failed to start transaction (timeout={}s): {} (code {})"
-        msg = msg.format(timeout, exc_buf.args[1], exc_buf.args[0])
-        raise Error(msg)
+        # Nested transaction
+        if self.nested_transactions:
+            if self.transaction_cnt == 0:
+                self.nested_rollback = False
+                try:
+                    self.con.start_transaction()
+                    self.log.debug("Transaction started")
+                except sqlite3.Error as e:
+                    raise Error(
+                        "Failed to start transaction: {}".format(e.args[0])
+                    )
+            self.transaction_cnt += 1
+        
+        # Transaction with timeout
+        else:
+            timeout = self.transaction_timeout if timeout == None else timeout
+            t0 = time.time()
+            exc_buf = None
+            while time.time() < t0+timeout:
+                try:
+                    self.con.start_transaction()
+                    self.log.debug("Transaction started")
+                    return
+                except mysql.connector.Error as e:
+                    exc_buf = e
+                    if e.msg == "Transaction already in progress":
+                        time.sleep(0.1) # try every 0.1 s to start transaction
+                    else:
+                        break
+                self.log.debug("Transaction wait...")
+            msg = "Failed to start transaction (timeout={}s): {} (code {})"
+            msg = msg.format(timeout, exc_buf.args[1], exc_buf.args[0])
+            raise Error(msg)
     
     
     def commit(self, t_state=True):
@@ -227,13 +242,36 @@ class MysqlDriver(Driver):
         """
         if not t_state:
             return
-        try:
-            self.con.commit()
-            self.log.debug("Transaction commited")
-        except mysql.connector.Error as e:
-            msg = "Failed to commit transaction: {} (code {})"
-            msg = msg.format(e.args[1], e.args[0])
-            raise Error(msg)
+        
+        # Nested transaction
+        if self.nested_transactions:
+            if self.transaction_cnt == 1:
+                if self.nested_rollback:
+                    self.rollback()
+                    self.transaction_cnt -= 1
+                    raise Error(
+                        "Transaction was commited despite previous " +
+                        "rollback in nested transaction"
+                    )
+                try:
+                    self.con.commit()
+                    self.log.debug("Transaction commited")
+                except sqlite3.Error as e:
+                    raise Error(
+                        "Failed to commit transaction: {}".format(e.args[0])
+                    )
+                
+            self.transaction_cnt -= 1
+        
+        # Transaction with timeout
+        else:
+            try:
+                self.con.commit()
+                self.log.debug("Transaction commited")
+            except mysql.connector.Error as e:
+                msg = "Failed to commit transaction: {} (code {})"
+                msg = msg.format(e.args[1], e.args[0])
+                raise Error(msg)
         
     
     def rollback(self, t_state=True):
@@ -242,13 +280,29 @@ class MysqlDriver(Driver):
         """
         if not t_state:
             return
-        try:
-            self.con.rollback()
-            self.log.debug("Transaction rolled back")
-        except mysql.connector.Error as e:
-            msg = "Failed to rollback transaction: {} (code {})"
-            msg = msg.format(e.args[1], e.args[0])
-            raise Error(msg)
+        
+        # Nested transaction
+        if self.nested_transactions:
+            self.nested_rollback = True
+            if self.transaction_cnt == 1:
+                try:
+                    self.con.rollback()
+                    self.log.debug("Transaction rolled back")
+                except sqlite3.Error as e:
+                    raise Error(
+                        "Failed to rollback transaction: {}".format(e.args[0])
+                    )
+            self.transaction_cnt -= 1
+        
+        # Transaction with timeout
+        else:
+            try:
+                self.con.rollback()
+                self.log.debug("Transaction rolled back")
+            except mysql.connector.Error as e:
+                msg = "Failed to rollback transaction: {} (code {})"
+                msg = msg.format(e.args[1], e.args[0])
+                raise Error(msg)
     
     
     def execute_multi(self, sql):

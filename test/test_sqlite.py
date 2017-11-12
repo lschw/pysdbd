@@ -42,6 +42,7 @@ class SqliteTest(unittest.TestCase):
     exc_not_null = "NOT NULL constraint failed: table1.col8"
     exc_transaction = "Failed to start transaction (timeout=1s): " + \
         "cannot start a transaction within a transaction"
+    exc_ntrans_commit = "Transaction was commited despite previous rollback in nested transaction"
     
     ret_value1 = [{'col8': 'some other text ...', 'col6': 0,
             'col7': 'some text ...', 'col4': '2017-02-03',
@@ -371,7 +372,7 @@ class SqliteTest(unittest.TestCase):
         
         self.open_db()
         self.dbh.create_table(tn, cols)
-
+        
         def thread_func(i):
             print("thread {}".format(i))
             
@@ -449,7 +450,106 @@ class SqliteTest(unittest.TestCase):
         self.dbh.delete_table("foobar")
         
         self.close_db()
+    
+    
+    def test_J_nested_transaction(self):
+        self.open_db()
+        self.dbh.create_table(tn, cols)
+        self.dbh.nested_transactions = True
+        
+        self.dbh.start_transaction()
+        self.dbh.start_transaction()
+        self.dbh.rollback()
+        self.dbh.rollback()
+        
+        self.dbh.start_transaction()
+        self.dbh.start_transaction()
+        self.dbh.commit()
+        self.dbh.rollback()
+        
+        self.dbh.start_transaction()
+        self.dbh.start_transaction()
+        self.dbh.rollback()
+        
+        with self.assertRaises(db.Error) as cm:
+            self.dbh.commit()
+        self.assertEqual(
+            cm.exception.__str__(),
+            self.exc_ntrans_commit
+        )
+        
+        self.dbh.start_transaction()
+        self.dbh.start_transaction()
+        self.dbh.commit()
+        self.dbh.commit()
+        
+        self.close_db()
+    
+    
+    def test_K_nested_transaction_multithread(self):
+        
+        import threading
+        import time
+        
+        self.open_db()
+        self.dbh.create_table(tn, cols)
+        
+        def thread_func(i):
+            print("thread {}".format(i))
+            
+            dbh = self.open_db(retobj=True)
+            dbh.nested_transactions = True
+            
+            sql1 = "INSERT INTO {} ({}) VALUES ({})".format(
+                self.dbh.quote_name(tn),
+                ",".join([self.dbh.quote_name("col{}".format(i)) for i in range(1,9)]),
+                ",".join([self.dbh.placeholder]*8)
+            )
+            
+            params = [
+                ["abcdefg", 4.22, 11, "2017-02-03", "2017-03-01 13:23:55",
+                False, "some text ...", "some other text ..."], 
+                ["hijklmn", "1.5", 77, "2017-02-06", "2017-06-01 13:23:55",
+                True, "more some text ...", "more |443| other text"]
+            ]
+            
+            # insert data
+            dbh.start_transaction()
+            dbh.start_transaction()
+            dbh.execute(sql1, params)
+            time.sleep(1)
+            dbh.commit()
+            dbh.commit()
+        
+        # start two threads which insert 2 rows and waits 1 second
+        for i in range(2):
+            t = threading.Thread(target=thread_func, args=(i,))
+            t.start()
+        
+        
+        sql2 = "SELECT COUNT(*) from {}".format(self.dbh.quote_name(tn))
+        
+        # wait until threads have ended
+        # in the mean time insert additional rows in a transaction which is
+        # rollbacked and show count of already inserted rows
+        while threading.active_count() > 1:
+            self.dbh.start_transaction()
+            self.dbh.execute(
+                "INSERT INTO {} (col8) VALUES (\"testval\")".format(
+                self.dbh.quote_name(tn))
+            )
+            print("no of rows: {}".format(self.dbh.execute(sql2, ret="col")))
+            self.dbh.rollback()
+            time.sleep(0.1)
+        
+        # finally there should be for rows available, two from each thread
+        self.assertEqual(
+            self.dbh.execute(sql2, ret="col"),
+            4
+        )
 
-
+        self.close_db()
+    
+    
 if __name__ == '__main__':
     unittest.main(verbosity=2)
