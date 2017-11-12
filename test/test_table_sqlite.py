@@ -36,7 +36,7 @@ class TableSettings(db.Table):
     }
     rows = [
         {"key" : "version", "value" : r"^(([0-9]+)\.([0-9]+)\.([0-9]+))$"},
-        {"key" : "typ", "value" : r"^(XYZ|ABC)$"},
+        {"key" : "type", "value" : r"^(XYZ|ABC)$"},
         {"key" : "name", "value" : r".+"},
     ]
     default = [
@@ -419,6 +419,10 @@ class TableTestSqlite(unittest.TestCase):
         self.persons.check_predefined_rows()
         
         # -> should raise error
+        if isinstance(self, TableTestSqlite):
+            self.dbh.execute("UPDATE \"settings\" SET \"value\" = \"JAJA\" WHERE \"key\" = \"type\"")
+        else:
+            self.dbh.execute("UPDATE `settings` SET `value` = \"JAJA\" WHERE `key` = \"type\"")
         with self.assertRaises(db.Error) as cm:
             self.settings.check_predefined_rows()
         
@@ -427,6 +431,7 @@ class TableTestSqlite(unittest.TestCase):
             True
         )
         
+        self.settings.delete()
         self.settings.create_default_rows()
         self.settings.check_predefined_rows()
         
