@@ -71,15 +71,15 @@ class TableTestSqlite(unittest.TestCase):
     ret7 = {"id": 1, "name": "Peter", "birthday": "2010-01-01", "size": 18.3}
 
     def setUp(self):
-        if os.path.isfile("test.db"):
-            os.remove("test.db")
-        self.dbh = db.SqliteDriver("test.db", True)
+        if os.path.isfile("/tmp/test.db"):
+            os.remove("/tmp/test.db")
+        self.dbh = db.SqliteDriver("/tmp/test.db", True)
 
 
     def tearDown(self):
         del(self.dbh)
-        if os.path.isfile("test.db"):
-            os.remove("test.db")
+        if os.path.isfile("/tmp/test.db"):
+            os.remove("/tmp/test.db")
 
 
     def create_tables(self):

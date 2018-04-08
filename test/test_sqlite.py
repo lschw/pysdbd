@@ -17,7 +17,7 @@ ch.setFormatter(formatter)
 log.addHandler(ch)
 
 # test db file name
-fn = "test.db"
+fn = "/tmp/test.db"
 
 # table name
 tn = "table1"
