@@ -17,6 +17,7 @@
 import logging
 from .error import *
 from .condition import *
+from .TransactionCM import TransactionCM
 
 class Driver:
     """
@@ -170,7 +171,11 @@ class Driver:
             If False, method does nothing
         """
         pass
-    
+
+
+    def transaction(self):
+        return TransactionCM(self)
+
 
     def execute_multi(self, sql):
         """

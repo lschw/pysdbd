@@ -43,6 +43,7 @@ class SqliteTest(unittest.TestCase):
     exc_transaction = "Failed to start transaction (timeout=1s): " + \
         "cannot start a transaction within a transaction"
     exc_ntrans_commit = "Transaction was commited despite previous rollback in nested transaction"
+    exc_invalid_syntax = "near \"Invalid\": syntax error"
 
     ret_value1 = [{'col8': 'some other text ...', 'col6': 0,
             'col7': 'some text ...', 'col4': '2017-02-03',
@@ -547,6 +548,56 @@ class SqliteTest(unittest.TestCase):
             self.dbh.execute(sql2, ret="col"),
             4
         )
+
+        self.close_db()
+
+
+    def test_L_transactionCM(self):
+        self.open_db()
+        self.dbh.create_table(tn, cols)
+
+        sql1 = "INSERT INTO {} ({}) VALUES ({})".format(
+            self.dbh.quote_name(tn),
+            ",".join([self.dbh.quote_name("col{}".format(i)) for i in range(1,9)]),
+            ",".join([self.dbh.placeholder]*8)
+        )
+
+        params = [
+            ["abcdefg", 4.22, 11, "2017-02-03", "2017-03-01 13:23:55", False,
+            "some text ...", "some other text ..."],
+            ["hijklmn", "1.5", 77, "2017-02-06", "2017-06-01 13:23:55", True,
+            "more some text ...", "more |443| other text"]
+        ]
+
+        sql2 = "SELECT COUNT(*) from {}".format(self.dbh.quote_name(tn))
+
+        # insert data inside transaction with rollback
+        with self.dbh.transaction():
+            self.dbh.execute(sql1, params)
+
+        # rows should be available
+        self.assertEqual(
+            self.dbh.execute(sql2, ret="col"),
+            2
+        )
+
+        with self.dbh.transaction():
+            with self.assertRaises(db.Error) as cm:
+                self.dbh.start_transaction(timeout=1)
+            self.assertEqual(
+                cm.exception.__str__(),
+                self.exc_transaction
+                )
+
+        with self.assertRaises(db.Error) as cm:
+            with self.dbh.transaction():
+                self.dbh.execute(sql1, params)
+                self.dbh.execute("Invalid syntax")
+        self.assertEqual(
+            cm.exception.__str__(),
+            self.exc_invalid_syntax
+        )
+
 
         self.close_db()
 
