@@ -42,7 +42,6 @@ def validate(col, value, fmt, errors):
     mixed
         Validated value
     """
-
     # Check for None value
     if "not_null" in fmt and value == None:
         errors[col] = "NONE_FIELD"
@@ -63,7 +62,7 @@ def validate(col, value, fmt, errors):
 
         # Loop through all specified formats
         for f in fmt:
-            if f == "not_empty" or f == "unique" or f == "text":
+            if f in ["not_empty", "not_null", "unique", "text"]:
                 continue
 
             # Validate with user defined regular expression
