@@ -5,12 +5,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -25,11 +25,11 @@ class MysqlDriver(Driver):
     """
 
     placeholder = "%s"
-    
+
     def __init__(self, host, db, user, passwd, socket=None):
         """
         Setup connection to database
-        
+
         Parameters
         ----------
         host : str
@@ -44,7 +44,7 @@ class MysqlDriver(Driver):
             Path to socket file, alternative to host
         """
         Driver.__init__(self)
-        
+
         try:
             self.con = mysql.connector.connect(
                 host=host,
@@ -59,15 +59,15 @@ class MysqlDriver(Driver):
             msg = "Failed to connect to database: {} (code {})"
             msg = msg.format(e.args[1], e.args[0])
             raise Error(msg)
-    
-    
+
+
     def __del__(self):
         """
         Close connection to database
         """
         self.close()
-    
-    
+
+
     def close(self):
         """
         Close connection to database. The driver should not longer be used
@@ -83,17 +83,17 @@ class MysqlDriver(Driver):
             msg = "Failed to close database connection: {} (code {})"
             msg = msg.format(e.args[1], e.args[0])
             raise Error(msg)
-    
-    
+
+
     @staticmethod
     def db_exists(host, db, user, passwd, socket=None):
         """
         Check whether database exists
-        
+
         Parameters
         ----------
         see `__init__()` for description
-        
+
         Returns
         -------
         bool
@@ -115,23 +115,23 @@ class MysqlDriver(Driver):
             msg = "Failed to connect to database: {} (code {})"
             msg = msg.format(e.args[1], e.args[0])
             raise Error(msg)
-    
-    
+
+
     def quote_name(self, name):
         """
         Quote `name` (e.g. a table name) for usage in sql query
         """
         return "`" + name + "`"
-    
-    
+
+
     def table_exists(self, name):
         """
         Check whether table `name` exists
         """
         sql = "SHOW TABLES LIKE %s"
         return (self.execute(sql, params=[name], ret="row") != None)
-    
-    
+
+
     def create_table(self, name, columns, unique=[]):
         """
         Create table
@@ -159,32 +159,32 @@ class MysqlDriver(Driver):
             if "not_null" in columns[col]:
                 s += " NOT NULL"
             col_str.append(s)
-        
+
         col_str.append("PRIMARY KEY ({})".format(self.quote_name("id")))
-        
+
         if unique:
             col_str.append(
                 "UNIQUE({})".format(", ".join(
                     [self.quote_name(col) for col in unique])
                 )
             )
-        
+
         sql = "CREATE TABLE {} ({}) ".format(
             self.quote_name(name),
             ", ".join(col_str)
         )
         sql += "ENGINE = InnoDB CHARSET=utf8 COLLATE utf8_unicode_ci;"
         self.execute(sql)
-    
-    
+
+
     def delete_table(self, name):
         """
         Delete table
         """
         sql = "DROP TABLE {}".format(self.quote_name(name))
         self.execute(sql)
-    
-    
+
+
     def get_columns(self, table):
         """
         Return all columns of table
@@ -192,15 +192,15 @@ class MysqlDriver(Driver):
         sql = "SHOW COLUMNS FROM {}".format(self.quote_name(table))
         rows = self.execute(sql, ret="rows")
         return [x["Field"] for x in rows]
-    
-    
+
+
     def start_transaction(self, t_state=True, timeout=None):
         """
         Start transaction (only if t_state = True)
         """
         if not t_state:
             return
-        
+
         # Nested transaction
         if self.nested_transactions:
             if self.transaction_cnt == 0:
@@ -213,7 +213,7 @@ class MysqlDriver(Driver):
                         "Failed to start transaction: {}".format(e.args[0])
                     )
             self.transaction_cnt += 1
-        
+
         # Transaction with timeout
         else:
             timeout = self.transaction_timeout if timeout == None else timeout
@@ -234,15 +234,15 @@ class MysqlDriver(Driver):
             msg = "Failed to start transaction (timeout={}s): {} (code {})"
             msg = msg.format(timeout, exc_buf.args[1], exc_buf.args[0])
             raise Error(msg)
-    
-    
+
+
     def commit(self, t_state=True):
         """
         Commit transaction (only if t_state = True)
         """
         if not t_state:
             return
-        
+
         # Nested transaction
         if self.nested_transactions:
             if self.transaction_cnt == 1:
@@ -260,9 +260,9 @@ class MysqlDriver(Driver):
                     raise Error(
                         "Failed to commit transaction: {}".format(e.args[0])
                     )
-                
+
             self.transaction_cnt -= 1
-        
+
         # Transaction with timeout
         else:
             try:
@@ -272,15 +272,15 @@ class MysqlDriver(Driver):
                 msg = "Failed to commit transaction: {} (code {})"
                 msg = msg.format(e.args[1], e.args[0])
                 raise Error(msg)
-        
-    
+
+
     def rollback(self, t_state=True):
         """
         Rollback transaction (only if t_state = True)
         """
         if not t_state:
             return
-        
+
         # Nested transaction
         if self.nested_transactions:
             self.nested_rollback = True
@@ -293,7 +293,7 @@ class MysqlDriver(Driver):
                         "Failed to rollback transaction: {}".format(e.args[0])
                     )
             self.transaction_cnt -= 1
-        
+
         # Transaction with timeout
         else:
             try:
@@ -303,8 +303,8 @@ class MysqlDriver(Driver):
                 msg = "Failed to rollback transaction: {} (code {})"
                 msg = msg.format(e.args[1], e.args[0])
                 raise Error(msg)
-    
-    
+
+
     def execute_multi(self, sql):
         """
         Execute multiple sql queries at once secured by a transaction
@@ -319,24 +319,24 @@ class MysqlDriver(Driver):
         except mysql.connector.Error as e:
             self.rollback()
             raise QueryError(e.args[1], e.args[0], sql)
-    
-    
+
+
     def execute(self, sql, params=[], ret="none"):
         """
         Execute single sql statement
         """
-        
+
         if params and not isinstance(params[0], list):
             params = [params]
-        
+
         if not params:
             # dummy entry to have at least one loop iteration to execute query
             params = [[None]]
-        
+
         try:
             c = None
             prepared = (len(params) > 1)
-            
+
             if ret == "rows" or ret == "row":
                 c = self.con.cursor(
                     cursor_class=mysql.connector.cursor.MySQLCursorDict,
@@ -344,27 +344,27 @@ class MysqlDriver(Driver):
                 )
             else:
                 c = self.con.cursor(prepared=prepared)
-            
+
             autotrans = False
             if not self.con.in_transaction:
                 self.start_transaction()
                 autotrans = True
-            
+
             res = []
             for p in params:
                 if len(p) == 0 or p == [None]:
                     p = None
-                
+
                 self.log.debug("Query: {}, Params: {}".format(
                     " ".join(sql.replace("\n", " ").split()), p
                 ))
                 c.execute(sql, p)
-            
+
                 if ret == "rows":
                     res.append(c.fetchall())
                 elif ret == "row":
                     res.append(c.fetchone())
-                    
+
                     # fetch and discard remaining rows to prevent
                     # "Unread result found" error
                     try:
@@ -374,7 +374,7 @@ class MysqlDriver(Driver):
                 elif ret == "col":
                     row = c.fetchone()
                     res.append(row[0] if row else None)
-                    
+
                     # fetch and discard remaining rows to prevent
                     # "Unread result found" error
                     try:
@@ -391,19 +391,19 @@ class MysqlDriver(Driver):
                     res.append(c.lastrowid)
                 else:
                     res.append(None)
-            
+
             c.close()
-            
+
             if autotrans and self.con.in_transaction:
                 self.commit()
-            
+
             if ret == "none":
                 return None
             if len(params) > 1:
                 return res
             else:
                 return res[0]
-        
+
         except mysql.connector.Error as e:
             c.close()
             raise QueryError(e.args[1], e.args[0], sql)

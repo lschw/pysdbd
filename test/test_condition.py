@@ -9,9 +9,9 @@ def quote(name):
 
 
 class ConditionTest(unittest.TestCase):
-    
+
     def test_nested_conditions(self):
-        
+
         cond1 = db.condition.Or(
             db.condition.And(
                 db.condition.Eq("name", "value"),
@@ -30,7 +30,7 @@ class ConditionTest(unittest.TestCase):
             db.condition.Geq("number3", 33.2),
             db.condition.Geq("abc", [14,3,11]),
         )
-        
+
         res_serialize = ' WHERE (("name" = ? AND "name2" IS NULL) OR ("foo" = ? AND "bar" = ?) OR "baz" REGEXP ? OR "blub" LIKE ? OR "haha" != ? OR "number1" > ? OR "number2" < ? OR "keyXY" <= ? OR "number3" >= ? OR "abc" >= ?)'
         res_cols = ['name', 'name2', 'foo', 'bar', 'baz', 'blub', 'haha',
             'number1', 'number2', 'keyXY', 'number3', 'abc']
@@ -39,7 +39,7 @@ class ConditionTest(unittest.TestCase):
             ['value', 'value', 'value2', '(.*)[abc|def]', 'bloblo', None, 44, -3, 'jaja', 33.2, 3],
             ['value', 'value', 'value2', '(.*)[abc|def]', 'bloblo', None, 44, -3, 'jaja', 33.2, 11]
         ]
-        
+
         self.assertEqual(cond1.serialize(quote=quote), res_serialize)
         self.assertEqual(cond1.cols(), res_cols)
         self.assertEqual(cond1.params(), res_params)

@@ -5,12 +5,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -25,13 +25,13 @@ class SqliteDriver(Driver):
     Implementation of driver with sqlite backend
     see https://docs.python.org/2.7/library/sqlite3.html
     """
-    
+
     placeholder = "?"
-    
+
     def __init__(self, file_name, create=False):
         """
         Setup connection to database
-        
+
         Parameters
         ----------
         file_name : str
@@ -41,7 +41,7 @@ class SqliteDriver(Driver):
         """
         Driver.__init__(self)
         self.file_name = file_name
-        
+
         try:
             if not create and not os.path.isfile(file_name):
                 raise sqlite3.Error(
@@ -51,30 +51,30 @@ class SqliteDriver(Driver):
                 file_name,
                 isolation_level=None # = autocommit mode
             )
-            
+
             # Convert returned rows to dict
             self.con.row_factory = self._dict_factory
-            
+
             # Handle unicode strings
             self.con.text_factory = str
-            
+
             # Make regexp function available in queries
             self.con.create_function("regexp", 2, self._regexp)
-            
+
             self.log.debug("Database '{}' opened".format(file_name))
         except sqlite3.Error as e:
             raise Error(
                 "Opening database '{}' failed: {}".format(file_name, e.args[0])
             )
-    
-    
+
+
     def __del__(self):
         """
         Close connection to database
         """
         self.close()
-    
-    
+
+
     def close(self):
         """
         Close connection to database. The driver should not longer be used
@@ -90,41 +90,41 @@ class SqliteDriver(Driver):
                 "Closing database '{}' failed: {}".format(
                     self.file_name, e.args[0]
             ))
-    
-    
+
+
     @staticmethod
     def db_exists(file_name):
         """
         Check whether database exists
-        
+
         Parameters
         ----------
         file_name : str
             File name of database file
-        
+
         Returns
         -------
         bool
             Whether database exists or not
         """
         return os.path.isfile(file_name)
-    
-    
+
+
     def quote_name(self, name):
         """
         Quote `name` (e.g. a table name) for usage in sql query
         """
         return '"' + name.replace('"', '""') + '"'
-    
-    
+
+
     def table_exists(self, name):
         """
         Check whether table `name` exists
         """
         sql = "SELECT name FROM sqlite_master WHERE name=?"
         return (self.execute(sql, params=[name], ret="row") != None)
-    
-    
+
+
     def create_table(self, name, columns, unique=[]):
         """
         Create table
@@ -152,29 +152,29 @@ class SqliteDriver(Driver):
             if "not_null" in columns[col]:
                 s += " NOT NULL"
             col_str.append(s)
-        
+
         if unique:
             col_str.append(
                 "UNIQUE({})".format(", ".join(
                     [self.quote_name(col) for col in unique])
                 )
             )
-        
+
         sql = "CREATE TABLE {} ({});".format(
             self.quote_name(name),
             ", ".join(col_str)
         )
         self.execute(sql)
-    
-    
+
+
     def delete_table(self, name):
         """
         Delete table
         """
         sql = "DROP TABLE {}".format(self.quote_name(name))
         self.execute(sql)
-    
-    
+
+
     def get_columns(self, table):
         """
         Return all columns of table
@@ -182,15 +182,15 @@ class SqliteDriver(Driver):
         sql = "PRAGMA table_info({});".format(self.quote_name(table))
         rows = self.execute(sql, ret="rows")
         return [x["name"] for x in rows]
-    
-    
+
+
     def start_transaction(self, t_state=True, timeout=None):
         """
         Start transaction (only if t_state = True)
         """
         if not t_state:
             return
-        
+
         # Nested transaction
         if self.nested_transactions:
             if self.transaction_cnt == 0:
@@ -206,7 +206,7 @@ class SqliteDriver(Driver):
                         "Failed to start transaction: {}".format(e.args[0])
                     )
             self.transaction_cnt += 1
-        
+
         # Transaction with timeout
         else:
             timeout = self.transaction_timeout if timeout == None else timeout
@@ -232,15 +232,15 @@ class SqliteDriver(Driver):
                     timeout, exc_buf.args[0]
                 )
             )
-    
-    
+
+
     def commit(self, t_state=True):
         """
         Commit transaction (only if t_state = True)
         """
         if not t_state:
             return
-        
+
         # Nested transaction
         if self.nested_transactions:
             if self.transaction_cnt == 1:
@@ -258,9 +258,9 @@ class SqliteDriver(Driver):
                     raise Error(
                         "Failed to commit transaction: {}".format(e.args[0])
                     )
-                
+
             self.transaction_cnt -= 1
-        
+
         # Transaction with timeout
         else:
             try:
@@ -270,15 +270,15 @@ class SqliteDriver(Driver):
                 raise Error(
                     "Failed to commit transaction: {}".format(e.args[0])
                 )
-    
-    
+
+
     def rollback(self, t_state=True):
         """
         Rollback transaction (only if t_state = True)
         """
         if not t_state:
             return
-        
+
         # Nested transaction
         if self.nested_transactions:
             self.nested_rollback = True
@@ -291,7 +291,7 @@ class SqliteDriver(Driver):
                         "Failed to rollback transaction: {}".format(e.args[0])
                     )
             self.transaction_cnt -= 1
-        
+
         # Transaction with timeout
         else:
             try:
@@ -301,8 +301,8 @@ class SqliteDriver(Driver):
                 raise Error(
                     "Failed to rollback transaction: {}".format(e.args[0])
                 )
-    
-        
+
+
     def execute_multi(self, sql):
         """
         Execute multiple sql queries at once secured by a transaction
@@ -316,16 +316,16 @@ class SqliteDriver(Driver):
         except sqlite3.Error as e:
             self.rollback()
             raise QueryError(e.args[0], -1, sql)
-    
-    
+
+
     def execute(self, sql, params=[], ret="none"):
         """
         Execute single sql statement
         """
-        
+
         if params and not isinstance(params[0], list):
             params = [params]
-        
+
         try:
             c = self.con.cursor()
             self.log.debug("Query: {}, Params: {}".format(
@@ -339,7 +339,7 @@ class SqliteDriver(Driver):
                 c.executemany(sql, params)
             else:
                 c.execute(sql, params[0])
-            
+
             if ret == "rows":
                 ret = c.fetchall()
             elif ret == "row":
@@ -359,44 +359,44 @@ class SqliteDriver(Driver):
                 ret = c.lastrowid
             else:
                 ret = None
-            
+
             c.close()
             return ret
-        
+
         except sqlite3.Error as e:
             c.close()
             raise QueryError(e.args[0], -1, sql)
-    
-    
+
+
     def _regexp(self, expr, item):
         """
         User defined sql function for regular expressions
-        
+
         Parameters
         ----------
         expr : str
             Regular expression
         item : str
             String to match regular expression
-        
+
         Returns
         -------
         bool
             Whether string matches regular expression
         """
         return re.match(expr, item) is not None
-    
-    
+
+
     def _dict_factory(self, cursor, row):
         """
         Method for converting results into dicts
-        
+
         Parameters
         ----------
         cursor : Cursor
             sqlite cursor
-        row : 
-        
+        row :
+
         Returns
         -------
         dict
@@ -406,4 +406,3 @@ class SqliteDriver(Driver):
         for idx, col in enumerate(cursor.description):
             d[col[0]] = row[idx]
         return d
-    

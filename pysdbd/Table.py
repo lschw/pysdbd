@@ -5,12 +5,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -23,10 +23,10 @@ class Table:
     """
     Class representing a single database table
     """
-    
+
     # Name of table (MUST BE SET IN DERIVED CLASS)
     name = None
-    
+
     # Definition of table columns (MUST BE SET IN DERIVED CLASS)
     #
     # It is mandatory that each table has an "id" column, which MUST not be
@@ -42,7 +42,7 @@ class Table:
     #    "size": ["float"]
     # }
     columns = {}
-    
+
     # List of rows, which must be present (optional in derived class)
     #
     # This may e.g. be useful for tables which contain key-value pairs for
@@ -57,7 +57,7 @@ class Table:
     #     {"key" : "name", "value" : ".+"},
     # ]
     rows = []
-    
+
     # Default values for predifined `rows` (optional in derived class)
     #
     # Each row is a dict with a column name as key and the column's value as
@@ -70,15 +70,15 @@ class Table:
     #     {"key" : "name", "value" : "foobar"},
     # ]
     default = []
-    
+
     # List of columns which should have an unique constraint
     unique = []
-    
-    
+
+
     def __init__(self, dbh, create=False):
         """
         Setup table, perform check if table exists
-        
+
         Parameters
         ----------
         dbh : Driver
@@ -93,17 +93,17 @@ class Table:
                 self.create_default_rows()
             else:
                 raise Error("Table '{}' does not exist".format(self.name))
-    
-    
+
+
     def count(self, where=Condition()):
         """
         Count rows matching condition
-        
+
         Parameters
         ----------
         where : Condition
             Condition for row to be counted
-        
+
         Returns
         -------
         int
@@ -118,29 +118,29 @@ class Table:
             )
         )
         return self.dbh.execute(sql, where.params(), ret="col")
-    
-    
+
+
     def exists(self, where):
         """
         Check whether row which matches condition exists
-        
+
         Parameters
         ----------
         where : Condition
             Condition for row to exists
-        
+
         Returns
         -------
         bool
             Whether row exists or not
         """
         return (self.count(where) > 0)
-    
-    
+
+
     def create(self, data, cb_validate=None, skip_check_predefined_rows=False):
         """
         Create new row(s)
-        
+
         Parameters
         ----------
         data : list of dict{ str: mixed }
@@ -155,7 +155,7 @@ class Table:
                     Error dict for each row. The method must save its errors
                     inside these dicts with column name as key
         skip_check_predefined_rows : Whether to skip the predefined rows check
-        
+
         Returns
         -------
         id, None
@@ -171,12 +171,12 @@ class Table:
         ids = self.dbh.execute(sql, values, ret="id")
         self._validate2(validated, cb_validate, skip_check_predefined_rows)
         return ids
-    
-    
+
+
     def update(self, data, where, cb_validate=None):
         """
         Update row(s)
-        
+
         Parameters
         ----------
         data : list of dict{ str: mixed }
@@ -205,12 +205,12 @@ class Table:
         )
         self.dbh.execute(sql, values)
         self._validate2(validated, cb_validate)
-        
-    
+
+
     def delete(self, where=Condition()):
         """
         Delete row
-        
+
         Parameters
         ----------
         where : Condition
@@ -225,13 +225,13 @@ class Table:
             )
         )
         self.dbh.execute(sql, where.params())
-    
-    
+
+
     def get(self, where=Condition(), ret="rows", cols="*", order="id",
             distinct=False, limit=None, offset=None):
         """
         Fetch data
-        
+
         Parameters
         ----------
         where : Condition
@@ -260,14 +260,14 @@ class Table:
             Limit count of returned rows by this value
         offset : None, int
             In combination with `limit`, sets offset of limited data set
-        
+
         Returns
         -------
         mixed
             Return value depends on `ret` argument
         """
         self._validate_where(where)
-        
+
         # Create query string for parameters
         if cols != "*":
             if not isinstance(cols, list):
@@ -277,7 +277,7 @@ class Table:
                     msg = "Invalid column '{}'".format(cols[i])
                     raise ColumnError(msg)
                 cols[i] = self.dbh.quote_name(cols[i])
-        
+
         # Create query string for order
         if isinstance(order, str):
             order = {order: "ASC"}
@@ -295,12 +295,12 @@ class Table:
                 )
             )
         order = ", ".join(order_str)
-        
+
         # Create query string for limit, offset and distinct
         limit = " LIMIT {}".format(limit) if limit != None else ""
         offset = " OFFSET {}".format(offset) if offset != None else ""
         distinct = " DISTINCT" if distinct else ""
-        
+
         # Create total query string
         sql = " SELECT {} {} FROM {} {} ORDER BY {} {} {}".format(
             distinct,
@@ -315,8 +315,8 @@ class Table:
             offset,
         )
         return self.dbh.execute(sql, where.params(), ret=ret)
-    
-    
+
+
     def check_cols(self):
         """
         Check if defined columns exist
@@ -328,16 +328,16 @@ class Table:
         for col in cols_defined:
             if col not in cols:
                 missing.append("'{}'".format(col))
-        
+
         if missing:
             raise Error(
-                "Table '{}' is invalid. ".format(self.name) + 
+                "Table '{}' is invalid. ".format(self.name) +
                 "The following columns do not exist: {}".format(
                     ", ".join(missing)
                 )
             )
-    
-    
+
+
     def check_predefined_rows(self):
         """
         Check if predefined rows exist and contain valid data
@@ -352,40 +352,40 @@ class Table:
                 where.add(Re(col, row[col]))
             if self.count(where=where) == 0:
                 invalid.append("{}".format(repr(row)))
-        
+
         if invalid:
             raise Error(
                 "Table '{}' is invalid. ".format(self.name) +
                 "The following predefined rows are missing or invalid: " +
                 "{}".format(", ".join(invalid))
             )
-    
-    
+
+
     def create_default_rows(self):
         """
         Create default rows defined for this table
         """
         for row in self.default:
             self.create([row], skip_check_predefined_rows=True)
-    
-    
+
+
     def _validate_data(self, data, errors):
         """
         Validate data
-        
+
         This function selects all columns which are defined for the table
         from `data` and validates the values according to the definition. The
         validation process may alter the data. If values are invalid, the error
         information is stored in the `error` dict.
         The validated data is returned.
-        
+
         Parameters
         ----------
         data : dict { str: mixed }
             Single data row to validate
         errors : dict { str: mixed }
             Error information for invalid columns
-        
+
         Returns
         -------
         dict { str: mixed }
@@ -395,22 +395,22 @@ class Table:
         for col in data:
             if col not in self.columns:
                 continue
-            
+
             validated[col] = validate(
                 col, data[col], self.columns[col], errors
             )
         return validated
-    
-    
+
+
     def _split_col_value(self, data):
         """
         Extract columns and values from data
-        
+
         Parameters
         ----------
         data : list of dict{ str: mixed }
             see `create()` for description
-        
+
         Returns
         -------
         list of dict
@@ -424,14 +424,14 @@ class Table:
         cols = []
         values = []
         errors = []
-        
+
         for i in range(len(data)):
             error = {}
             v = self._validate_data(data[i], error)
             errors.append(copy.copy(error))
             if error:
                 continue
-            
+
             if not cols:
                 # Assume columns in first data set to be valid for all
                 # other data sets
@@ -444,21 +444,21 @@ class Table:
                         raise Error("Data sets have not the same columns")
             values.append([v[col] for col in cols])
             validated.append(v)
-        
+
         if not all(not e for e in errors):
             raise ValidationError(errors)
-        
+
         if not cols:
             raise Error("No valid columns available")
-        
+
         return validated,cols,values
-    
-    
+
+
     def _validate2(self, data, cb_validate=None,
             skip_check_predefined_rows=False):
         """
         Validate data after inserting into database
-        
+
         Parameters
         ----------
         data : list of dict{ str: mixed }
@@ -476,28 +476,28 @@ class Table:
                 if "unique" in self.columns[col] and col in d:
                     if self.count(Eq(col, d[col])) > 1:
                         errors[i][col] = "NOT_UNIQUE"
-        
+
         if not all(not e for e in errors):
             raise ValidationError(errors)
-        
+
         if cb_validate != None:
             cb_validate(data, errors)
             if not all(not e for e in errors):
                 raise ValidationError(errors)
-    
-    
-    
+
+
+
     def _join_where_params(self, values, where):
         """
         Join parameter values of conditions with `values`
-        
+
         Parameters
         ----------
         values : list of list of mixed
             data values
         where : Condition, list of Conditions
             Condition to join parameter values
-        
+
         Returns
         -------
         list of list of mixed
@@ -519,12 +519,12 @@ class Table:
                 v += values_where[-1]
             values_joined.append(v)
         return values_joined
-        
-        
+
+
     def _validate_where(self, where):
         """
         Check if columns in condition are valid
-        
+
         Parameters
         ----------
         where : Condition
@@ -541,4 +541,3 @@ class Table:
                 )
             )
             raise ColumnError(msg)
-    

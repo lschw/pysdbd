@@ -17,11 +17,11 @@ See the following code for a small example.
 
 
 ### Example
-    
+
     import pysdbd as db
-    
+
     class TablePersons(db.Table):
-        
+
         name = "persons"
         columns = {
             "name": ["not_empty"],
@@ -31,7 +31,7 @@ See the following code for a small example.
 
     dbh = db.SqliteDriver("test.db", True)
     persons = TablePersons(dbh, True)
-    
+
     dbh.start_transaction()
     persons.create(
         [
@@ -41,7 +41,7 @@ See the following code for a small example.
         ]
     )
     dbh.commit()
-    
+
     dbh.start_transaction()
     persons.update(
         [
@@ -51,7 +51,7 @@ See the following code for a small example.
         where=db.condition.Eq("id", [1,2])
     )
     dbh.commit()
-    
+
     print(persons.get())
 
     print(
@@ -64,7 +64,7 @@ See the following code for a small example.
             ret="rows"
         )
     )
-    
+
     persons.delete(
         where=db.condition.Eq("name", "Peter")
     )
