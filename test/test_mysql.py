@@ -23,6 +23,7 @@ class MysqlTest(SqliteTest):
     exc_not_null = "1048 (23000): Column 'col8' cannot be null"
     exc_transaction = "Failed to start transaction (timeout=1s): " + \
         "Transaction already in progress (code -1)"
+    exc_invalid_syntax = "1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'Invalid syntax' at line 1"
 
     ret_value1 = [{u'col8': u'some other text ...', u'col6': 0,
             u'col7': u'some text ...', u'col4': datetime.date(2017, 2, 3),
