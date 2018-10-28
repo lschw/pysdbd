@@ -85,6 +85,12 @@ class MysqlTest(SqliteTest):
         if remove and self.dbh and self.dbh.table_exists(tn):
             self.dbh.delete_table(tn)
 
+        if remove and self.dbh and self.dbh.table_exists("xyz"):
+            self.dbh.delete_table("xyz")
+
+        if remove and self.dbh and self.dbh.table_exists("foobar"):
+            self.dbh.delete_table("foobar")
+
         if self.dbh:
             self.dbh.close()
             self.dbh = None
