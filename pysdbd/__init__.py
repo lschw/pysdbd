@@ -18,9 +18,11 @@
 
 from .error import Error, ColumnError, ValidationError, QueryError
 from .Table import Table
-from .MysqlDriver import MysqlDriver
+try:
+    import mysql.connector
+    from .MysqlDriver import MysqlDriver
+except:
+    pass
 from .SqliteDriver import SqliteDriver
 
 __version__ = "1.0.0"
-__all__ = ["Error", "ColumnError", "ValidationError", "QueryError", "Table",
-    "MysqlDriver", "SqliteDriver"]
