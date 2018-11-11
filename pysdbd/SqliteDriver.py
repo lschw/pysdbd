@@ -114,7 +114,9 @@ class SqliteDriver(Driver):
         """
         Quote `name` (e.g. a table name) for usage in sql query
         """
-        return '"' + name.replace('"', '""') + '"'
+        return ".".join(
+            ['"' + n.replace('"', '""') + '"' for n in name.split(".")]
+        )
 
 
     def table_exists(self, name):

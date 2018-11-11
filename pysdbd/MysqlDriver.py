@@ -121,7 +121,9 @@ class MysqlDriver(Driver):
         """
         Quote `name` (e.g. a table name) for usage in sql query
         """
-        return "`" + name + "`"
+        return ".".join(
+            ["`" + n + "`" for n in name.split(".")]
+        )
 
 
     def table_exists(self, name):
