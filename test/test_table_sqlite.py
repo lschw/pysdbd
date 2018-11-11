@@ -419,7 +419,7 @@ class TableTestSqlite(unittest.TestCase):
         self.persons.check_predefined_rows()
 
         # -> should raise error
-        if isinstance(self, TableTestSqlite):
+        if type(self) == TableTestSqlite:
             self.dbh.execute("UPDATE \"settings\" SET \"value\" = \"JAJA\" WHERE \"key\" = \"type\"")
         else:
             self.dbh.execute("UPDATE `settings` SET `value` = \"JAJA\" WHERE `key` = \"type\"")
