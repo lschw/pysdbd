@@ -260,7 +260,10 @@ class SqliteDriver(Driver):
                     raise Error(
                         "Failed to commit transaction: {}".format(e.args[0])
                     )
-
+            elif self.transaction_cnt == 0:
+                raise Error(
+                    "Failed to commit transaction: No open transaction"
+                )
             self.transaction_cnt -= 1
 
         # Transaction with timeout
@@ -292,6 +295,10 @@ class SqliteDriver(Driver):
                     raise Error(
                         "Failed to rollback transaction: {}".format(e.args[0])
                     )
+            elif self.transaction_cnt == 0:
+                raise Error(
+                    "Failed to rollback transaction: No open transaction"
+                )
             self.transaction_cnt -= 1
 
         # Transaction with timeout
